@@ -1,0 +1,9 @@
+#!/bin/sh
+tsc index.ts \
+--out index.js \
+--noImplicitAny \
+--declaration \
+--removeComments \
+--sourceMap \
+--target ES5 \
+$@

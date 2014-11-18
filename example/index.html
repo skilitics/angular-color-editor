@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+</head>
+<body ng-app="app">
+<label>
+  Built-in color picker:
+  <input type="color" ng-model="color">
+</label>
+
+<sk-color-editor value="color"></sk-color-editor>
+
+<script src="/node_modules/angular/angular.js"></script>
+<script src="/index.js"></script>
+<script>
+  angular.module('app', ['skColorEditor'])
+</script>
+</body>
+</html>

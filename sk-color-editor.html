@@ -1,0 +1,22 @@
+<form>
+  <div>
+    <label>
+      Value: <input type=text ng-model=value>
+    </label>
+  </div>
+  <div>
+    <label>
+      Hue: <input type=range ng-model=hue min=0 max=360 step=1> {{hue}}
+    </label>
+  </div>
+  <div>
+    <label>
+      Saturation: <input type=range ng-model=saturation min=0 max=1 step=0.01> {{saturation}}
+    </label>
+  </div>
+  <div>
+    <label>
+      Lightness: <input type=range ng-model=lightness min=0 max=1 step=0.01> {{lightness}}
+    </label>
+  </div>
+</form>
