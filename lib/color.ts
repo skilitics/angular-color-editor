@@ -31,7 +31,13 @@ module sk.Color {
     return (color >> 0 & 0xFF) / 0xFF;
   }
 
-  export class HSL {
+  export interface IHSL {
+    hue : number
+    saturation : number
+    lightness : number
+  }
+
+  export class HSL implements IHSL {
     constructor(
       public hue:number,
       public saturation:number,
@@ -106,6 +112,7 @@ module sk.Color {
 
   // Normalize hue to [0, 360)
   export function normalizeHue(hue:number):number {
+    if (!isFinite(hue)) return 0;
     // We could normally just "return hue % 360", except that
     // 'x % y' is defined as 'x - Math.trunc(x / y) * y',
     // that is, the remainder of x/y when rounded towards 0.

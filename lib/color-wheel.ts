@@ -10,7 +10,7 @@ module sk {
                 public innerRadius:number) {
     }
 
-    draw(hsl:Color.HSL) {
+    draw(hsl:Color.IHSL) {
       var h = Color.normalizeHue(hsl.hue);
       var s = Color.clampValue(hsl.saturation);
       var l = Color.clampValue(hsl.lightness);

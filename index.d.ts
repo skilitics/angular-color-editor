@@ -7,7 +7,12 @@ declare module sk.Color {
     function red(color: number): number;
     function green(color: number): number;
     function blue(color: number): number;
-    class HSL {
+    interface IHSL {
+        hue: number;
+        saturation: number;
+        lightness: number;
+    }
+    class HSL implements IHSL {
         hue: number;
         saturation: number;
         lightness: number;
@@ -33,7 +38,7 @@ declare module sk {
         SEGMENTS: number;
         ZERO_ANGLE: number;
         constructor(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, innerRadius: number);
-        draw(hsl: Color.HSL): void;
+        draw(hsl: Color.IHSL): void;
         private drawHueWheel();
         private drawToneTriangle(hue, hueAngle);
         private drawHueSelection(hueAngle);

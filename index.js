@@ -102,6 +102,8 @@ var sk;
         }
         Color.clampValue = clampValue;
         function normalizeHue(hue) {
+            if (!isFinite(hue))
+                return 0;
             return hue >= 0 ? hue % 360 : hue - Math.floor(hue / 360) * 360;
         }
         Color.normalizeHue = normalizeHue;
@@ -271,24 +273,64 @@ var sk;
     angular.module('skColorEditor', []).directive('skColorEditor', function () {
         return {
             restrict: 'E',
-            scope: { value: '=', size: '=' },
+            scope: { value: '=?', hue: '=?', saturation: '=?', lightness: '=?', size: '=', innerSize: '=?' },
             template: '<canvas width={{size}} height={{size}}>Requires canvas support</canvas>',
             link: function (scope, element) {
                 var canvas = element.find('canvas')[0];
                 var ctx = canvas.getContext('2d');
-                var ui;
-                scope.$watch("value", draw, true);
-                scope.$watch('size', function (value) {
-                    var radius = parseInt(value) / 2 | 0;
-                    ui = new sk.ColorWheelUI(ctx, radius, radius, radius, radius - 30);
-                    if (scope.value) {
-                        draw(scope.value);
+                var ui, hsl;
+                scope.$watch('value', function (value) {
+                    var color = NaN;
+                    if (typeof value == 'number')
+                        color = value & 0xFFFFFF;
+                    else if (typeof value == 'string')
+                        color = sk.Color.parse(value);
+                    else if ("hue" in value && "saturation" in value && "lightness" in value) {
+                        hsl = value;
+                        draw();
+                    }
+                    if (!isNaN(color) && !(hsl && hsl.toColor() == color)) {
+                        hsl = sk.Color.toHSL(color);
+                        draw();
                     }
                 });
-                function draw(value) {
+                scope.$watchGroup('hue saturation lightness'.split(' '), function (values) {
+                    var hue = sk.Color.normalizeHue(values[0]);
+                    var saturation = sk.Color.clampValue(values[1]);
+                    var lightness = sk.Color.clampValue(values[2]);
+                    hsl = new sk.Color.HSL(hue, saturation, lightness);
+                    scope.value = sk.Color.stringify(hsl.toColor());
+                    draw();
+                });
+                scope.$watchGroup('size innerSize'.split(' '), function (values) {
+                    var size = values[0];
+                    if (typeof size == 'string') {
+                        size = parseFloat(size);
+                    }
+                    if (!isFinite(size)) {
+                        size = 400;
+                    }
+                    var innerSize = values[1];
+                    if (typeof innerSize == 'string') {
+                        if (/%$/.test(innerSize)) {
+                            innerSize = size * parseFloat(innerSize.substring(0, innerSize.length - 1));
+                        }
+                        else {
+                            innerSize = parseFloat(innerSize);
+                        }
+                    }
+                    if (!isFinite(innerSize)) {
+                        innerSize = size * 0.85;
+                    }
+                    var radius = size / 2 | 0;
+                    var innerRadius = innerSize / 2 | 0;
+                    ui = new sk.ColorWheelUI(ctx, radius, radius, radius, innerRadius);
+                    draw();
+                });
+                function draw() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    if (ui && value)
-                        ui.draw(value);
+                    if (ui && hsl)
+                        ui.draw(hsl);
                 }
             }
         };
