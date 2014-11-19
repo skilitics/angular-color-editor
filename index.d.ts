@@ -1,5 +1,5 @@
 /// <reference path="typings/tsd.d.ts" />
-declare module Color {
+declare module sk.Color {
     var PATTERN: RegExp;
     function parse(value: string): number;
     function stringify(color: number): string;
@@ -23,9 +23,24 @@ declare module Color {
     function normalizeHue(hue: number): number;
     function fromHsl(hue: number, saturation: number, lightness: number): number;
 }
-interface IColorScope extends ng.IScope {
-    value: string;
-    hue: number;
-    saturation: number;
-    lightness: number;
+declare module sk {
+    class ColorWheelUI {
+        private ctx;
+        x: number;
+        y: number;
+        radius: number;
+        innerRadius: number;
+        SEGMENTS: number;
+        ZERO_ANGLE: number;
+        constructor(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, innerRadius: number);
+        draw(hsl: Color.HSL): void;
+        private drawHueWheel();
+        private drawToneTriangle(hue, hueAngle);
+        private drawHueSelection(hueAngle);
+        private drawToneSelection(hueAngle, saturation, lightness);
+        private polarX(angle, radius);
+        private polarY(angle, radius);
+    }
+}
+declare module sk {
 }

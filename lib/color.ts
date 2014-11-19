@@ -1,4 +1,4 @@
-module Color {
+module sk.Color {
   export var PATTERN:RegExp = /^#[0-9a-fA-F]{6}$/;
 
   export function parse(value:string):number {

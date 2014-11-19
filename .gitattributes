@@ -1,1 +1,4 @@
 * text=auto
+*.js -diff
+*.d.ts -diff
+*.map -diff

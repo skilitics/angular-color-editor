@@ -1,48 +1,37 @@
 /// <reference path="typings/tsd.d.ts" />
-/// <reference path="lib/color.ts" />
+/// <reference path="lib/_all.ts" />
 
-interface IColorScope extends ng.IScope {
-  value : string
-  hue : number
-  saturation : number
-  lightness : number
-}
+module sk {
+  interface IColorEditorScope extends ng.IScope {
+    value : Color.HSL
+    size : string
+  }
 
-angular.module('skColorEditor', []).directive('skColorEditor', function () {
-  return {
-    restrict: 'E',
-    scope: {value: '='},
-    templateUrl: 'sk-color-editor.html',
-    link: function (scope:IColorScope) {
-      // Internal state
-      var hsl = new Color.HSL(0, 0, 0);
+  angular.module('skColorEditor', []).directive('skColorEditor', function () {
+    return {
+      restrict: 'E',
+      scope: {value: '=', size: '='},
+      template: '<canvas width={{size}} height={{size}}>Requires canvas support</canvas>',
+      link: function (scope:IColorEditorScope, element:ng.IAugmentedJQuery) {
+        var canvas = <HTMLCanvasElement> element.find('canvas')[0];
+        var ctx = canvas.getContext('2d');
+        var ui:ColorWheelUI;
 
-      // Initialize scope (needed?)
-      scope.value = '#000000';
-      scope.hue = 0;
-      scope.saturation = 0;
-      scope.lightness = 0;
+        scope.$watch("value", draw, /*objectEquality: */true);
 
-      // Update scope from state
-      scope.$watch(function () {
-        return hsl.toColor();
-      }, function (value:number) {
-        scope.value = Color.stringify(value);
-        scope.hue = hsl.hue;
-        scope.saturation = hsl.saturation;
-        scope.lightness = hsl.lightness;
-      });
+        scope.$watch('size', function (value) {
+          var radius = parseInt(value) / 2 | 0;
+          ui = new ColorWheelUI(ctx, radius, radius, radius, radius - 30);
+          if (scope.value) {
+            draw(scope.value);
+          }
+        });
 
-      // Update state from scope
-      scope.$watch('value', function (value:string) {
-        var color = Color.parse(value);
-        if (!isNaN(color)) {
-          hsl = Color.toHSL(color);
+        function draw(value) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (ui && value) ui.draw(value);
         }
-      });
-      scope.$watchGroup('hue saturation lightness'.split(' '), function () {
-        hsl = new Color.HSL(scope.hue, scope.saturation, scope.lightness);
-      });
-    }
-  };
-});
+      }
+    };
+  });
+}

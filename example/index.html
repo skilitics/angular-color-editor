@@ -1,19 +1,70 @@
 <!doctype html>
 <html>
 <head>
+  <style>
+    label>:first-child { display: inline-block; width: 200px }
+    input[type=range] { width: 300px }
+  </style>
 </head>
-<body ng-app="app">
-<label>
-  Built-in color picker:
-  <input type="color" ng-model="color">
-</label>
+<body ng-app=app ng-controller=AppController>
+<div>
+  <label>
+    <span>Built-in color picker:</span>
+    <input type=color ng-model=value>
+  </label>
+</div>
+<div>
+  <label>
+    <span>Value:</span>
+    <input type=text ng-model=value>
+  </label>
+</div>
+<div>
+  <label>
+    <span>Hue:</span>
+    <input type=range ng-model=hsl.hue min=0 max=360 step=1> {{hsl.hue}}
+  </label>
+</div>
+<div>
+  <label>
+    <span>Saturation:</span>
+    <input type=range ng-model=hsl.saturation min=0 max=1 step=0.01> {{hsl.saturation}}
+  </label>
+</div>
+<div>
+  <label>
+    <span>Lightness:</span>
+    <input type=range ng-model=hsl.lightness min=0 max=1 step=0.01> {{hsl.lightness}}
+  </label>
+</div>
+<div>
+  <label>
+    <span>Size:</span>
+    <input type=range ng-model=size min=50 max=1000 step=1> {{size}}
+  </label>
+</div>
 
-<sk-color-editor value="color"></sk-color-editor>
+<sk-color-editor value=hsl size=size></sk-color-editor>
 
 <script src="/node_modules/angular/angular.js"></script>
 <script src="/index.js"></script>
 <script>
   angular.module('app', ['skColorEditor'])
+    .controller('AppController', ['$scope', function ($scope) {
+      var Color = sk.Color;
+      $scope.size = 400;
+      $scope.value = '#ff00ff';
+
+      $scope.$watch('value', function (value) {
+        var color = Color.parse(value);
+        if (!isNaN(color) && !($scope.hsl && $scope.hsl.toColor() == color)) {
+          $scope.hsl = Color.toHSL(color);
+        }
+      });
+      $scope.$watch('hsl', function (value) {
+        $scope.value = Color.stringify(value.toColor());
+      }, /*objectEquality:*/ true);
+    }])
 </script>
 </body>
 </html>
