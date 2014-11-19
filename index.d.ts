@@ -37,7 +37,7 @@ declare module sk {
         private drawHueWheel();
         private drawToneTriangle(hue, hueAngle);
         private drawHueSelection(hueAngle);
-        private drawToneSelection(hueAngle, saturation, lightness);
+        private drawToneSelection(h, s, l);
         private polarX(angle, radius);
         private polarY(angle, radius);
     }

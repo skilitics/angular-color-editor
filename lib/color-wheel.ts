@@ -11,12 +11,15 @@ module sk {
     }
 
     draw(hsl:Color.HSL) {
-      var hueAngle = hsl.hue * Math.PI / 180 + this.ZERO_ANGLE;
+      var h = Color.normalizeHue(hsl.hue);
+      var s = Color.clampValue(hsl.saturation);
+      var l = Color.clampValue(hsl.lightness);
+      var hueAngle = h * Math.PI / 180 + this.ZERO_ANGLE;
 
       this.drawHueWheel();
-      this.drawToneTriangle(hsl.hue, hueAngle);
+      this.drawToneTriangle(h, hueAngle);
       this.drawHueSelection(hueAngle);
-      this.drawToneSelection(hueAngle, hsl.saturation, hsl.lightness);
+      this.drawToneSelection(h, s, l);
     }
 
     private drawHueWheel() {
@@ -122,12 +125,47 @@ module sk {
       ctx.lineTo(
         this.polarX(hueAngle, radius),
         this.polarY(hueAngle, radius));
+      ctx.strokeStyle = '#000000';
       ctx.stroke();
     }
 
-    private drawToneSelection(hueAngle:number, saturation:number, lightness:number) {
-      var ctx = this.ctx;
+    private drawToneSelection(h:number, s:number, l:number) {
+      // Compute dx,dy as x, y for a 0,0 center, 1 radius, 0 hue.
+
+      // Max x, y for such a triangle
+      var mx = Math.sqrt(0.75); // cos(PI/6) == sqrt(3/4)
+      var my = 0.5;             // sin(PI/6) == sqrt(1/4)
+
+      var t = 2 * l - 1; // 'tone', lightness from [-1,1]
+      var c = (1 - Math.abs(t)) * s; // chroma
+
+      //    s    l    c    t  dx   dy
+      //  1.0  0.5  1.0  0.0   0    1   # hue corner
+      //  0.0  0.0  0.0 -1.0  mx  -my   # black corner
+      //  0.0  1.0  0.0  1.0 -mx  -my   # white corner
+      //  1/3  0.5  1/3  0.0   0    0   # center
+      var dx = -mx * t;
+      var dy = my - c * (1 + my);
+
+      // Rotate by hue using a standard rotation matrix.
+      // http://en.wikipedia.org/wiki/Rotation_matrix#In_two_dimensions
+      var r = -h * Math.PI / 180;
+      var cr = Math.cos(r);
+      var sr = Math.sin(r);
+      var rx =  dx * cr + dy * sr;
+      var ry = -dx * sr + dy * cr;
+
+      // Apply actual metrics for final x, y
       var radius = this.innerRadius;
+      var x = this.x + rx * radius;
+      var y = this.y + ry * radius;
+
+      // Draw selection circle in contrasting shade.
+      var ctx = this.ctx;
+      ctx.strokeStyle = t < 0 ? '#ffffff' : '#000000';
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     private polarX(angle:number, radius:number):number {

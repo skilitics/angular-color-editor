@@ -27,7 +27,7 @@ module sk {
           }
         });
 
-        function draw(value) {
+        function draw(value:Color.HSL) {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           if (ui && value) ui.draw(value);
         }

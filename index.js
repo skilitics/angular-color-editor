@@ -160,11 +160,14 @@ var sk;
             this.ZERO_ANGLE = -Math.PI / 2;
         }
         ColorWheelUI.prototype.draw = function (hsl) {
-            var hueAngle = hsl.hue * Math.PI / 180 + this.ZERO_ANGLE;
+            var h = sk.Color.normalizeHue(hsl.hue);
+            var s = sk.Color.clampValue(hsl.saturation);
+            var l = sk.Color.clampValue(hsl.lightness);
+            var hueAngle = h * Math.PI / 180 + this.ZERO_ANGLE;
             this.drawHueWheel();
-            this.drawToneTriangle(hsl.hue, hueAngle);
+            this.drawToneTriangle(h, hueAngle);
             this.drawHueSelection(hueAngle);
-            this.drawToneSelection(hueAngle, hsl.saturation, hsl.lightness);
+            this.drawToneSelection(h, s, l);
         };
         ColorWheelUI.prototype.drawHueWheel = function () {
             var segments = this.SEGMENTS;
@@ -229,11 +232,29 @@ var sk;
             ctx.beginPath();
             ctx.moveTo(this.polarX(hueAngle, innerRadius), this.polarY(hueAngle, innerRadius));
             ctx.lineTo(this.polarX(hueAngle, radius), this.polarY(hueAngle, radius));
+            ctx.strokeStyle = '#000000';
             ctx.stroke();
         };
-        ColorWheelUI.prototype.drawToneSelection = function (hueAngle, saturation, lightness) {
-            var ctx = this.ctx;
+        ColorWheelUI.prototype.drawToneSelection = function (h, s, l) {
+            var mx = Math.sqrt(0.75);
+            var my = 0.5;
+            var t = 2 * l - 1;
+            var c = (1 - Math.abs(t)) * s;
+            var dx = -mx * t;
+            var dy = my - c * (1 + my);
+            var r = -h * Math.PI / 180;
+            var cr = Math.cos(r);
+            var sr = Math.sin(r);
+            var rx = dx * cr + dy * sr;
+            var ry = -dx * sr + dy * cr;
             var radius = this.innerRadius;
+            var x = this.x + rx * radius;
+            var y = this.y + ry * radius;
+            var ctx = this.ctx;
+            ctx.strokeStyle = t < 0 ? '#ffffff' : '#000000';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.stroke();
         };
         ColorWheelUI.prototype.polarX = function (angle, radius) {
             return this.x + Math.cos(angle) * radius;
