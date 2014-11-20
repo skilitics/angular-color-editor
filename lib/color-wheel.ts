@@ -74,16 +74,42 @@ module sk {
           var nx = ( dx * cr + dy * sr) / radius;
           var ny = (-dx * sr + dy * cr) / radius;
 
-          // Compute tone, chroma
+          // Clamp to nearest point on triangle:
+          //   hue:   0,-1
+          // white: -mx,my
+          // black:  mx,my
           var mx = this.TONE_MAX_X;
           var my = this.TONE_MAX_Y;
 
+          if (ny > my) { // below grey edge?
+            ny = my;
+            if (nx < -mx) nx = -mx;
+            else if (nx > mx) nx = mx;
+          } else {
+            // nearest point on hue edges.
+            // http://paulbourke.net/geometry/pointlineplane/
+            // p1 = hue point (0, -1)
+            // p2 = white/black (abs) point: (mx,my)
+            // p3 = point to clamp
+            // (p2-p1)^2 = (1 + my)^2 + mx^2 = 2.25 + 0.75 = 3
+            var u = (Math.abs(nx) * mx + (ny + 1) * (my + 1)) / 3;
+            // Clamp to line segment
+            u = Color.clampValue(u);
+            // Clamp if nearest point is below
+            if (ny < u * (my + 1) - 1) {
+              nx = u * (nx < 0 ? -mx : mx);
+              ny = u * (my + 1) - 1;
+            }
+          }
+
+          // Compute tone, chroma => saturation, lightness
           var t = -nx / mx;
           var c = (my - ny) / (1 + my);
 
           var s = c / (1 - Math.abs(t));
           var l = (t + 1) / 2;
 
+          // Clamp again to handle rounding
           hsl.saturation = Color.clampValue(s);
           hsl.lightness = Color.clampValue(l);
           break;
@@ -205,9 +231,9 @@ module sk {
       var c = (1 - Math.abs(t)) * s; // chroma
 
       //    s    l    c    t  dx   dy
-      //  1.0  0.5  1.0  0.0   0    1   # hue corner
-      //  0.0  0.0  0.0 -1.0  mx  -my   # black corner
-      //  0.0  1.0  0.0  1.0 -mx  -my   # white corner
+      //  1.0  0.5  1.0  0.0   0   -1   # hue corner
+      //  0.0  0.0  0.0 -1.0  mx   my   # black corner
+      //  0.0  1.0  0.0  1.0 -mx   my   # white corner
       //  1/3  0.5  1/3  0.0   0    0   # center
       var dx = -mx * t;
       var dy = my - c * (1 + my);

@@ -216,6 +216,21 @@ var sk;
                     var ny = (-dx * sr + dy * cr) / radius;
                     var mx = this.TONE_MAX_X;
                     var my = this.TONE_MAX_Y;
+                    if (ny > my) {
+                        ny = my;
+                        if (nx < -mx)
+                            nx = -mx;
+                        else if (nx > mx)
+                            nx = mx;
+                    }
+                    else {
+                        var u = (Math.abs(nx) * mx + (ny + 1) * (my + 1)) / 3;
+                        u = sk.Color.clampValue(u);
+                        if (ny < u * (my + 1) - 1) {
+                            nx = u * (nx < 0 ? -mx : mx);
+                            ny = u * (my + 1) - 1;
+                        }
+                    }
                     var t = -nx / mx;
                     var c = (my - ny) / (1 + my);
                     var s = c / (1 - Math.abs(t));
