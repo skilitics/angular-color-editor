@@ -11,15 +11,40 @@ module sk {
     innerSize : number
   }
 
-  angular.module('skColorEditor', []).directive('skColorEditor', () => {
+  angular.module('skColorEditor', []).directive('skColorEditor', ['$document', ($document:ng.IDocumentService) => {
     return {
       restrict: 'E',
       scope: { value: '=?', hue: '=?', saturation: '=?', lightness: '=?', size: '=', innerSize: '=?' },
-      template: '<canvas width={{size}} height={{size}}>Requires canvas support</canvas>',
+      template: '<canvas width={{size}} height={{size}} style="cursor: default; user-select: none">Requires canvas support</canvas>',
       link: (scope:IColorEditorScope, element:ng.IAugmentedJQuery) => {
         var canvas = <HTMLCanvasElement> element.find('canvas')[0];
         var ctx = canvas.getContext('2d');
         var ui:ColorWheelUI, hsl:Color.HSL;
+
+        canvas.addEventListener('mousedown', event => {
+          var rect = canvas.getBoundingClientRect();
+          var hit = !ui ? ColorWheelHit.None : ui.hitTest(hsl, event.clientX - rect.left, event.clientY - rect.top);
+          if (hit) {
+            $document.on('mousemove', mouseMove);
+            $document.on('mouseup', mouseUp);
+            function mouseUp(event:JQueryMouseEventObject) {
+              mouseMove(event);
+              $document.off('mousemove', mouseMove);
+              $document.off('mouseup', mouseUp);
+            }
+            function mouseMove(event:JQueryMouseEventObject) {
+              var rect = canvas.getBoundingClientRect();
+              ui.down(hit, hsl, event.clientX - rect.left, event.clientY - rect.top);
+              draw();
+
+              scope.$applyAsync((scope:IColorEditorScope) => {
+                scope.hue = hsl.hue;
+                scope.saturation = hsl.saturation;
+                scope.lightness = hsl.lightness;
+              });
+            }
+          }
+        });
 
         scope.$watch('value', value => {
           var color = NaN;
@@ -78,5 +103,5 @@ module sk {
         }
       }
     };
-  });
+  }]);
 }

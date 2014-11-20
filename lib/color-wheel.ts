@@ -1,7 +1,11 @@
 module sk {
+  export enum ColorWheelHit { None, Hue, Tone }
+
   export class ColorWheelUI {
     SEGMENTS = 12;
     ZERO_ANGLE = -Math.PI / 2;
+    TONE_MAX_X = Math.sqrt(0.75); // cos(PI/6) == sqrt(3/4)
+    TONE_MAX_Y = 0.5;             // sin(PI/6) == sqrt(1/4)
 
     constructor(private ctx:CanvasRenderingContext2D,
                 public x:number,
@@ -20,6 +24,70 @@ module sk {
       this.drawToneTriangle(h, hueAngle);
       this.drawHueSelection(hueAngle);
       this.drawToneSelection(h, s, l);
+    }
+
+    hitTest(hsl:Color.IHSL, x:number, y:number):ColorWheelHit {
+      var dx = x - this.x, dy = y - this.y;
+      var r2 = dx * dx + dy * dy;
+      var radius = this.innerRadius;
+      var i2 = radius * radius;
+      var o2 = this.radius * this.radius;
+      if (i2 <= r2 && r2 <= o2) {
+        return ColorWheelHit.Hue;
+      }
+
+      // Normalize to 0,0 center, 1 radius, 0 hue
+      var r = hsl.hue * Math.PI / 180;
+      var cr = Math.cos(r), sr = Math.sin(r);
+      var nx = ( dx * cr + dy * sr) / radius;
+      var ny = (-dx * sr + dy * cr) / radius;
+
+      var mx = this.TONE_MAX_X;
+      var my = this.TONE_MAX_Y;
+
+      // Compute tone, chroma -> saturation
+      var t = -nx / mx;
+      var c = (my - ny) / (1 + my);
+
+      var s = c / (1 - Math.abs(t));
+
+      if (0 <= s && s <= 1) {
+        return ColorWheelHit.Tone;
+      }
+
+      return ColorWheelHit.None;
+    }
+
+    down(hit:ColorWheelHit, hsl:Color.IHSL, x:number, y:number) {
+      var dx = x - this.x, dy = y - this.y;
+      switch (hit) {
+        case ColorWheelHit.Hue:
+          hsl.hue = (Math.atan2(dy, dx) - this.ZERO_ANGLE) * 180 / Math.PI;
+          break;
+
+        case ColorWheelHit.Tone:
+          var radius = this.innerRadius;
+
+          // Normalize to 0,0 center, 1 radius, 0 hue
+          var r = hsl.hue * Math.PI / 180;
+          var cr = Math.cos(r), sr = Math.sin(r);
+          var nx = ( dx * cr + dy * sr) / radius;
+          var ny = (-dx * sr + dy * cr) / radius;
+
+          // Compute tone, chroma
+          var mx = this.TONE_MAX_X;
+          var my = this.TONE_MAX_Y;
+
+          var t = -nx / mx;
+          var c = (my - ny) / (1 + my);
+
+          var s = c / (1 - Math.abs(t));
+          var l = (t + 1) / 2;
+
+          hsl.saturation = Color.clampValue(s);
+          hsl.lightness = Color.clampValue(l);
+          break;
+      }
     }
 
     private drawHueWheel() {
@@ -133,8 +201,8 @@ module sk {
       // Compute dx,dy as x, y for a 0,0 center, 1 radius, 0 hue.
 
       // Max x, y for such a triangle
-      var mx = Math.sqrt(0.75); // cos(PI/6) == sqrt(3/4)
-      var my = 0.5;             // sin(PI/6) == sqrt(1/4)
+      var mx = this.TONE_MAX_X;
+      var my = this.TONE_MAX_Y;
 
       var t = 2 * l - 1; // 'tone', lightness from [-1,1]
       var c = (1 - Math.abs(t)) * s; // chroma

@@ -29,6 +29,11 @@ declare module sk.Color {
     function fromHsl(hue: number, saturation: number, lightness: number): number;
 }
 declare module sk {
+    enum ColorWheelHit {
+        None = 0,
+        Hue = 1,
+        Tone = 2,
+    }
     class ColorWheelUI {
         private ctx;
         x: number;
@@ -37,8 +42,12 @@ declare module sk {
         innerRadius: number;
         SEGMENTS: number;
         ZERO_ANGLE: number;
+        TONE_MAX_X: number;
+        TONE_MAX_Y: number;
         constructor(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, innerRadius: number);
         draw(hsl: Color.IHSL): void;
+        hitTest(hsl: Color.IHSL, x: number, y: number): ColorWheelHit;
+        down(hit: ColorWheelHit, hsl: Color.IHSL, x: number, y: number): void;
         private drawHueWheel();
         private drawToneTriangle(hue, hueAngle);
         private drawHueSelection(hueAngle);
