@@ -249,7 +249,6 @@ var sk;
                 ctx.closePath();
                 ctx.fill();
             }
-            ctx.fillStyle = null;
         };
         ColorWheelUI.prototype.drawToneTriangle = function (hue, hueAngle) {
             var ctx = this.ctx;
@@ -279,7 +278,6 @@ var sk;
             fillStyle.addColorStop(1, 'hsla(' + hue + ', 100%, 50%, 1)');
             ctx.fillStyle = fillStyle;
             ctx.fill();
-            ctx.fillStyle = null;
         };
         ColorWheelUI.prototype.drawHueSelection = function (hueAngle) {
             var ctx = this.ctx;
@@ -288,6 +286,7 @@ var sk;
             ctx.beginPath();
             ctx.moveTo(this.polarX(hueAngle, innerRadius), this.polarY(hueAngle, innerRadius));
             ctx.lineTo(this.polarX(hueAngle, radius), this.polarY(hueAngle, radius));
+            ctx.lineWidth = 2;
             ctx.strokeStyle = '#000000';
             ctx.stroke();
         };
@@ -307,9 +306,10 @@ var sk;
             var x = this.x + rx * radius;
             var y = this.y + ry * radius;
             var ctx = this.ctx;
+            ctx.lineWidth = 2;
             ctx.strokeStyle = t < 0 ? '#ffffff' : '#000000';
             ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.arc(x, y, 3.5, 0, Math.PI * 2);
             ctx.stroke();
         };
         ColorWheelUI.prototype.polarX = function (angle, radius) {
@@ -333,6 +333,7 @@ var sk;
                 var canvas = element.find('canvas')[0];
                 var ctx = canvas.getContext('2d');
                 var ui, hsl;
+                scope.size = 200;
                 canvas.addEventListener('mousedown', function (event) {
                     var rect = canvas.getBoundingClientRect();
                     var hit = !ui ? 0 /* None */ : ui.hitTest(hsl, event.clientX - rect.left, event.clientY - rect.top);
@@ -362,7 +363,7 @@ var sk;
                         color = value & 0xFFFFFF;
                     else if (typeof value == 'string')
                         color = sk.Color.parse(value);
-                    else if ("hue" in value && "saturation" in value && "lightness" in value) {
+                    else if (typeof value == 'object' && "hue" in value && "saturation" in value && "lightness" in value) {
                         hsl = value;
                         draw();
                     }
@@ -385,7 +386,7 @@ var sk;
                         size = parseFloat(size);
                     }
                     if (!isFinite(size)) {
-                        size = 400;
+                        size = 200;
                     }
                     var innerSize = values[1];
                     if (typeof innerSize == 'string') {
@@ -397,7 +398,7 @@ var sk;
                         }
                     }
                     if (!isFinite(innerSize)) {
-                        innerSize = size * 0.85;
+                        innerSize = size * 0.80;
                     }
                     var radius = size / 2 | 0;
                     var innerRadius = innerSize / 2 | 0;

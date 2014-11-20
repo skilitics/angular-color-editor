@@ -20,6 +20,7 @@ module sk {
         var canvas = <HTMLCanvasElement> element.find('canvas')[0];
         var ctx = canvas.getContext('2d');
         var ui:ColorWheelUI, hsl:Color.HSL;
+        scope.size = 200;
 
         canvas.addEventListener('mousedown', event => {
           var rect = canvas.getBoundingClientRect();
@@ -52,7 +53,7 @@ module sk {
             color = value & 0xFFFFFF;
           else if (typeof value == 'string')
             color = Color.parse(value);
-          else if ("hue" in value && "saturation" in value && "lightness" in value) { // is IHSL
+          else if (typeof value == 'object' && "hue" in value && "saturation" in value && "lightness" in value) { // is IHSL
             hsl = value;
             draw();
           }
@@ -76,7 +77,7 @@ module sk {
             size = parseFloat(size);
           }
           if (!isFinite(size)) {
-            size = 400;
+            size = 200;
           }
 
           var innerSize = values[1];
@@ -88,7 +89,7 @@ module sk {
             }
           }
           if (!isFinite(innerSize)) {
-            innerSize = size * 0.85;
+            innerSize = size * 0.80;
           }
 
           var radius = size / 2 | 0;

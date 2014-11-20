@@ -137,8 +137,6 @@ module sk {
         ctx.closePath();
         ctx.fill();
       }
-
-      ctx.fillStyle = null;
     }
 
     private drawToneTriangle(hue:number, hueAngle:number) {
@@ -177,8 +175,6 @@ module sk {
       fillStyle.addColorStop(1, 'hsla(' + hue + ', 100%, 50%, 1)');
       ctx.fillStyle = fillStyle;
       ctx.fill();
-
-      ctx.fillStyle = null;
     }
 
     private drawHueSelection(hueAngle:number) {
@@ -193,6 +189,7 @@ module sk {
       ctx.lineTo(
         this.polarX(hueAngle, radius),
         this.polarY(hueAngle, radius));
+      ctx.lineWidth = 2;
       ctx.strokeStyle = '#000000';
       ctx.stroke();
     }
@@ -230,9 +227,10 @@ module sk {
 
       // Draw selection circle in contrasting shade.
       var ctx = this.ctx;
+      ctx.lineWidth = 2;
       ctx.strokeStyle = t < 0 ? '#ffffff' : '#000000';
       ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
       ctx.stroke();
     }
 
