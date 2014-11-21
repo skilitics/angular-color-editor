@@ -1,6 +1,6 @@
 #!/bin/sh
-tsc index.ts \
---out index.js \
+tsc sk-color-editor.ts \
+--out sk-color-editor.js \
 --noImplicitAny \
 --declaration \
 --removeComments \

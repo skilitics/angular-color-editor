@@ -2,7 +2,7 @@
   "name": "angular-color-editor",
   "description": "Angular color editor",
   "version": "0.0.1",
-  "main": "index.js",
+  "main": "sk-color-editor.js",
   "homepage": "https://github.com/skilitics/angular-color-editor",
   "keywords": [],
   "dependencies": {
