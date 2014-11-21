@@ -11,40 +11,53 @@ module sk {
     innerSize : number
   }
 
-  angular.module('skColorEditor', []).directive('skColorEditor', ['$document', ($document:ng.IDocumentService) => {
+  interface CaptureOnDownCallback {
+    (event:MouseEvent):MouseEventListener
+  }
+  interface MouseEventListener {
+    (event:MouseEvent):void
+  }
+
+  function captureOnDown(element:HTMLElement, callback:CaptureOnDownCallback) {
+    element.addEventListener('mousedown', function (event) {
+      event.preventDefault();
+      var mouseMove = callback(event);
+      if (mouseMove) {
+        mouseMove(event);
+        document.addEventListener('mousemove', mouseMove);
+        document.addEventListener('mouseup', function mouseUp(event:MouseEvent) {
+          document.removeEventListener('mousemove', mouseMove);
+          document.removeEventListener('mouseup', mouseUp);
+        });
+      }
+    });
+  }
+
+  angular.module('skColorEditor', []).directive('skColorEditor', () => {
     return {
       restrict: 'E',
       scope: { value: '=?', hue: '=?', saturation: '=?', lightness: '=?', size: '=', innerSize: '=?' },
-      template: '<canvas width={{size}} height={{size}} style="cursor: default; user-select: none">Requires canvas support</canvas>',
+      template: '<canvas width={{size}} height={{size}}>Requires canvas support</canvas>',
       link: (scope:IColorEditorScope, element:ng.IAugmentedJQuery) => {
         var canvas = <HTMLCanvasElement> element.find('canvas')[0];
         var ctx = canvas.getContext('2d');
         var ui:ColorWheelUI, hsl:Color.HSL;
         scope.size = 200;
 
-        canvas.addEventListener('mousedown', event => {
+        captureOnDown(canvas, function (event) {
+          if (!ui || event.button != 0) return null;
           var rect = canvas.getBoundingClientRect();
-          var hit = !ui ? ColorWheelHit.None : ui.hitTest(hsl, event.clientX - rect.left, event.clientY - rect.top);
-          if (hit) {
-            $document.on('mousemove', mouseMove);
-            $document.on('mouseup', mouseUp);
-            function mouseUp(event:JQueryMouseEventObject) {
-              mouseMove(event);
-              $document.off('mousemove', mouseMove);
-              $document.off('mouseup', mouseUp);
-            }
-            function mouseMove(event:JQueryMouseEventObject) {
+          var hit = ui.hitTest(hsl, event.clientX - rect.left, event.clientY - rect.top);
+          if (!hit) return null;
+          return event => {
+            scope.$apply((scope:IColorEditorScope) => {
               var rect = canvas.getBoundingClientRect();
               ui.down(hit, hsl, event.clientX - rect.left, event.clientY - rect.top);
-              draw();
-
-              scope.$applyAsync((scope:IColorEditorScope) => {
-                scope.hue = hsl.hue;
-                scope.saturation = hsl.saturation;
-                scope.lightness = hsl.lightness;
-              });
-            }
-          }
+              scope.hue = hsl.hue;
+              scope.saturation = hsl.saturation;
+              scope.lightness = hsl.lightness;
+            });
+          };
         });
 
         scope.$watch('value', value => {
@@ -98,11 +111,20 @@ module sk {
           draw();
         });
 
+        var drawing = false;
         function draw() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          if (ui && hsl) ui.draw(hsl);
+          // Firefox, at least, seems to have trouble keeping up with paints
+          // inside a mouse-event on some platforms/configurations (leading to "choppy"
+          // interaction). Throttle to only one delayed call, prefer requestAnimationFrame()
+          // which should guarantee execution before next paint.
+          drawing || (requestAnimationFrame || setTimeout)(() => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (ui && hsl) ui.draw(hsl);
+            drawing = false;
+          });
+          drawing = true;
         }
       }
     };
-  }]);
+  });
 }

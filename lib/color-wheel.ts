@@ -7,11 +7,15 @@ module sk {
     TONE_MAX_X = Math.sqrt(0.75); // cos(PI/6) == sqrt(3/4)
     TONE_MAX_Y = 0.5;             // sin(PI/6) == sqrt(1/4)
 
+    hueGradients:CanvasGradient[];
+
     constructor(private ctx:CanvasRenderingContext2D,
                 public x:number,
                 public y:number,
                 public radius:number,
                 public innerRadius:number) {
+
+      this.hueGradients = this.createHueGradients();
     }
 
     draw(hsl:Color.IHSL) {
@@ -138,6 +142,31 @@ module sk {
 
       for (var i = 0; i != segments; i++) {
         // Compute the hues and angles at the start and end of the current segment.
+        var startAngle = zeroAngle + i / segments * Math.PI * 2 - overdrawAngle;
+        var endAngle = zeroAngle + (i + 1) / segments * Math.PI * 2;
+
+        ctx.fillStyle = this.hueGradients[i];
+
+        // Draw and fill the segment.
+        ctx.beginPath();
+        ctx.arc(x, y, radius, startAngle, endAngle, false);
+        ctx.arc(x, y, innerRadius, endAngle, startAngle, true);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    private createHueGradients():CanvasGradient[] {
+      var ctx = this.ctx;
+      var segments = this.SEGMENTS;
+      var zeroAngle = this.ZERO_ANGLE;
+      var innerRadius = this.innerRadius;
+      var overdrawAngle = Math.atan2(1, innerRadius);
+
+      var result = <CanvasGradient[]>[];
+
+      for (var i = 0; i != segments; i++) {
+        // Compute the hues and angles at the start and end of the current segment.
         var startHue = i / segments * 360;
         var endHue = (i + 1) / segments * 360;
         var startAngle = zeroAngle + i / segments * Math.PI * 2 - overdrawAngle;
@@ -147,22 +176,17 @@ module sk {
         // Putting the ends at innerRadius means there is no discontinuity
         // in colors, though it starts looking bad with larger factors between
         // inner and outer radii.
-        var fillStyle = ctx.createLinearGradient(
+        var gradient = ctx.createLinearGradient(
           this.polarX(startAngle, innerRadius),
           this.polarY(startAngle, innerRadius),
           this.polarX(endAngle, innerRadius),
           this.polarY(endAngle, innerRadius));
-        fillStyle.addColorStop(0, 'hsl(' + startHue + ', 100%, 50%)');
-        fillStyle.addColorStop(1, 'hsl(' + endHue + ', 100%, 50%)');
-        ctx.fillStyle = fillStyle;//'hsl('+startHue+', 100%, 50%)'
+        gradient.addColorStop(0, 'hsl(' + startHue + ', 100%, 50%)');
+        gradient.addColorStop(1, 'hsl(' + endHue + ', 100%, 50%)');
 
-        // Draw and fill the segment.
-        ctx.beginPath();
-        ctx.arc(x, y, radius, startAngle, endAngle, false);
-        ctx.arc(x, y, innerRadius, endAngle, startAngle, true);
-        ctx.closePath();
-        ctx.fill();
+        result.push(gradient);
       }
+      return result;
     }
 
     private drawToneTriangle(hue:number, hueAngle:number) {

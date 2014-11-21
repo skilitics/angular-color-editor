@@ -168,6 +168,7 @@ var sk;
             this.ZERO_ANGLE = -Math.PI / 2;
             this.TONE_MAX_X = Math.sqrt(0.75);
             this.TONE_MAX_Y = 0.5;
+            this.hueGradients = this.createHueGradients();
         }
         ColorWheelUI.prototype.draw = function (hsl) {
             var h = sk.Color.normalizeHue(hsl.hue);
@@ -250,20 +251,34 @@ var sk;
             var zeroAngle = this.ZERO_ANGLE;
             var overdrawAngle = Math.atan2(1, innerRadius);
             for (var i = 0; i != segments; i++) {
-                var startHue = i / segments * 360;
-                var endHue = (i + 1) / segments * 360;
                 var startAngle = zeroAngle + i / segments * Math.PI * 2 - overdrawAngle;
                 var endAngle = zeroAngle + (i + 1) / segments * Math.PI * 2;
-                var fillStyle = ctx.createLinearGradient(this.polarX(startAngle, innerRadius), this.polarY(startAngle, innerRadius), this.polarX(endAngle, innerRadius), this.polarY(endAngle, innerRadius));
-                fillStyle.addColorStop(0, 'hsl(' + startHue + ', 100%, 50%)');
-                fillStyle.addColorStop(1, 'hsl(' + endHue + ', 100%, 50%)');
-                ctx.fillStyle = fillStyle;
+                ctx.fillStyle = this.hueGradients[i];
                 ctx.beginPath();
                 ctx.arc(x, y, radius, startAngle, endAngle, false);
                 ctx.arc(x, y, innerRadius, endAngle, startAngle, true);
                 ctx.closePath();
                 ctx.fill();
             }
+        };
+        ColorWheelUI.prototype.createHueGradients = function () {
+            var ctx = this.ctx;
+            var segments = this.SEGMENTS;
+            var zeroAngle = this.ZERO_ANGLE;
+            var innerRadius = this.innerRadius;
+            var overdrawAngle = Math.atan2(1, innerRadius);
+            var result = [];
+            for (var i = 0; i != segments; i++) {
+                var startHue = i / segments * 360;
+                var endHue = (i + 1) / segments * 360;
+                var startAngle = zeroAngle + i / segments * Math.PI * 2 - overdrawAngle;
+                var endAngle = zeroAngle + (i + 1) / segments * Math.PI * 2;
+                var gradient = ctx.createLinearGradient(this.polarX(startAngle, innerRadius), this.polarY(startAngle, innerRadius), this.polarX(endAngle, innerRadius), this.polarY(endAngle, innerRadius));
+                gradient.addColorStop(0, 'hsl(' + startHue + ', 100%, 50%)');
+                gradient.addColorStop(1, 'hsl(' + endHue + ', 100%, 50%)');
+                result.push(gradient);
+            }
+            return result;
         };
         ColorWheelUI.prototype.drawToneTriangle = function (hue, hueAngle) {
             var ctx = this.ctx;
@@ -339,38 +354,46 @@ var sk;
 })(sk || (sk = {}));
 var sk;
 (function (sk) {
-    angular.module('skColorEditor', []).directive('skColorEditor', ['$document', function ($document) {
+    function captureOnDown(element, callback) {
+        element.addEventListener('mousedown', function (event) {
+            event.preventDefault();
+            var mouseMove = callback(event);
+            if (mouseMove) {
+                mouseMove(event);
+                document.addEventListener('mousemove', mouseMove);
+                document.addEventListener('mouseup', function mouseUp(event) {
+                    document.removeEventListener('mousemove', mouseMove);
+                    document.removeEventListener('mouseup', mouseUp);
+                });
+            }
+        });
+    }
+    angular.module('skColorEditor', []).directive('skColorEditor', function () {
         return {
             restrict: 'E',
             scope: { value: '=?', hue: '=?', saturation: '=?', lightness: '=?', size: '=', innerSize: '=?' },
-            template: '<canvas width={{size}} height={{size}} style="cursor: default; user-select: none">Requires canvas support</canvas>',
+            template: '<canvas width={{size}} height={{size}}>Requires canvas support</canvas>',
             link: function (scope, element) {
                 var canvas = element.find('canvas')[0];
                 var ctx = canvas.getContext('2d');
                 var ui, hsl;
                 scope.size = 200;
-                canvas.addEventListener('mousedown', function (event) {
+                captureOnDown(canvas, function (event) {
+                    if (!ui || event.button != 0)
+                        return null;
                     var rect = canvas.getBoundingClientRect();
-                    var hit = !ui ? 0 /* None */ : ui.hitTest(hsl, event.clientX - rect.left, event.clientY - rect.top);
-                    if (hit) {
-                        $document.on('mousemove', mouseMove);
-                        $document.on('mouseup', mouseUp);
-                        function mouseUp(event) {
-                            mouseMove(event);
-                            $document.off('mousemove', mouseMove);
-                            $document.off('mouseup', mouseUp);
-                        }
-                        function mouseMove(event) {
+                    var hit = ui.hitTest(hsl, event.clientX - rect.left, event.clientY - rect.top);
+                    if (!hit)
+                        return null;
+                    return function (event) {
+                        scope.$apply(function (scope) {
                             var rect = canvas.getBoundingClientRect();
                             ui.down(hit, hsl, event.clientX - rect.left, event.clientY - rect.top);
-                            draw();
-                            scope.$applyAsync(function (scope) {
-                                scope.hue = hsl.hue;
-                                scope.saturation = hsl.saturation;
-                                scope.lightness = hsl.lightness;
-                            });
-                        }
-                    }
+                            scope.hue = hsl.hue;
+                            scope.saturation = hsl.saturation;
+                            scope.lightness = hsl.lightness;
+                        });
+                    };
                 });
                 scope.$watch('value', function (value) {
                     var color = NaN;
@@ -420,13 +443,18 @@ var sk;
                     ui = new sk.ColorWheelUI(ctx, radius, radius, radius, innerRadius);
                     draw();
                 });
+                var drawing = false;
                 function draw() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    if (ui && hsl)
-                        ui.draw(hsl);
+                    drawing || (requestAnimationFrame || setTimeout)(function () {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        if (ui && hsl)
+                            ui.draw(hsl);
+                        drawing = false;
+                    });
+                    drawing = true;
                 }
             }
         };
-    }]);
+    });
 })(sk || (sk = {}));
 //# sourceMappingURL=sk-color-editor.js.map

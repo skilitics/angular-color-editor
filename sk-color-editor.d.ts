@@ -44,11 +44,13 @@ declare module sk {
         ZERO_ANGLE: number;
         TONE_MAX_X: number;
         TONE_MAX_Y: number;
+        hueGradients: CanvasGradient[];
         constructor(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, innerRadius: number);
         draw(hsl: Color.IHSL): void;
         hitTest(hsl: Color.IHSL, x: number, y: number): ColorWheelHit;
         down(hit: ColorWheelHit, hsl: Color.IHSL, x: number, y: number): void;
         private drawHueWheel();
+        private createHueGradients();
         private drawToneTriangle(hue, hueAngle);
         private drawHueSelection(hueAngle);
         private drawToneSelection(h, s, l);
