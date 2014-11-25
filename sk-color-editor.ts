@@ -7,8 +7,8 @@ module sk {
     hue : number
     saturation : number
     lightness : number
-    size : number
-    innerSize : number
+    size : ()=>number
+    innerSize : ()=>number
   }
 
   interface CaptureOnDownCallback {
@@ -36,13 +36,12 @@ module sk {
   angular.module('skColorEditor', []).directive('skColorEditor', () => {
     return {
       restrict: 'E',
-      scope: { value: '=?', hue: '=?', saturation: '=?', lightness: '=?', size: '=', innerSize: '=?' },
-      template: '<canvas width={{size}} height={{size}}>Requires canvas support</canvas>',
+      scope: { value: '=?', hue: '=?', saturation: '=?', lightness: '=?', size: '&', innerSize: '&?' },
+      template: '<canvas>Requires canvas support</canvas>',
       link: (scope:IColorEditorScope, element:ng.IAugmentedJQuery) => {
         var canvas = <HTMLCanvasElement> element.find('canvas')[0];
         var ctx = canvas.getContext('2d');
         var ui:ColorWheelUI, hsl:Color.HSL;
-        scope.size = 200;
 
         var applying = false;
         captureOnDown(canvas, function (event) {
@@ -87,7 +86,7 @@ module sk {
           draw();
         });
 
-        scope.$watchGroup('size innerSize'.split(' '), values => {
+        scope.$watchGroup('size() innerSize()'.split(' '), values => {
           var size = values[0];
           if (typeof size == 'string') {
             size = parseFloat(size);
@@ -95,6 +94,7 @@ module sk {
           if (!isFinite(size)) {
             size = 200;
           }
+          canvas.width = canvas.height = size;
 
           var innerSize = values[1];
           if (typeof innerSize == 'string') {
