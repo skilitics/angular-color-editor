@@ -44,19 +44,22 @@ module sk {
         var ui:ColorWheelUI, hsl:Color.HSL;
         scope.size = 200;
 
+        var applying = false;
         captureOnDown(canvas, function (event) {
           if (!ui || event.button != 0) return null;
           var rect = canvas.getBoundingClientRect();
           var hit = ui.hitTest(hsl, event.clientX - rect.left, event.clientY - rect.top);
           if (!hit) return null;
           return event => {
-            scope.$apply((scope:IColorEditorScope) => {
-              var rect = canvas.getBoundingClientRect();
-              ui.down(hit, hsl, event.clientX - rect.left, event.clientY - rect.top);
+            var rect = canvas.getBoundingClientRect();
+            ui.down(hit, hsl, event.clientX - rect.left, event.clientY - rect.top);
+            applying || scope.$applyAsync((scope:IColorEditorScope) => {
+              applying = false;
               scope.hue = hsl.hue;
               scope.saturation = hsl.saturation;
               scope.lightness = hsl.lightness;
             });
+            applying = true;
           };
         });
 

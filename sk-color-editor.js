@@ -378,6 +378,7 @@ var sk;
                 var ctx = canvas.getContext('2d');
                 var ui, hsl;
                 scope.size = 200;
+                var applying = false;
                 captureOnDown(canvas, function (event) {
                     if (!ui || event.button != 0)
                         return null;
@@ -386,13 +387,15 @@ var sk;
                     if (!hit)
                         return null;
                     return function (event) {
-                        scope.$apply(function (scope) {
-                            var rect = canvas.getBoundingClientRect();
-                            ui.down(hit, hsl, event.clientX - rect.left, event.clientY - rect.top);
+                        var rect = canvas.getBoundingClientRect();
+                        ui.down(hit, hsl, event.clientX - rect.left, event.clientY - rect.top);
+                        applying || scope.$applyAsync(function (scope) {
+                            applying = false;
                             scope.hue = hsl.hue;
                             scope.saturation = hsl.saturation;
                             scope.lightness = hsl.lightness;
                         });
+                        applying = true;
                     };
                 });
                 scope.$watch('value', function (value) {
