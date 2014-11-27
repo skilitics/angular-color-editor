@@ -120,7 +120,7 @@ module sk {
           // inside a mouse-event on some platforms/configurations (leading to "choppy"
           // interaction). Throttle to only one delayed call, prefer requestAnimationFrame()
           // which should guarantee execution before next paint.
-          drawing || (requestAnimationFrame || setTimeout)(() => {
+          drawing || (window.requestAnimationFrame || setTimeout)(() => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (ui && hsl) ui.draw(hsl);
             drawing = false;
