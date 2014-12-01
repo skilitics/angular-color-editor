@@ -448,7 +448,7 @@ var sk;
                 });
                 var drawing = false;
                 function draw() {
-                    drawing || (requestAnimationFrame || setTimeout)(function () {
+                    drawing || (window.requestAnimationFrame || setTimeout)(function () {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         if (ui && hsl)
                             ui.draw(hsl);
