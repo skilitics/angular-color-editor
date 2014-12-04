@@ -413,12 +413,14 @@ var sk;
                     }
                 });
                 scope.$watchGroup('hue saturation lightness'.split(' '), function (values) {
-                    var hue = sk.Color.normalizeHue(values[0]);
-                    var saturation = sk.Color.clampValue(values[1]);
-                    var lightness = sk.Color.clampValue(values[2]);
-                    hsl = new sk.Color.HSL(hue, saturation, lightness);
-                    scope.value = sk.Color.stringify(hsl.toColor());
-                    draw();
+                    if (!values.some(isNaN)) {
+                        var hue = sk.Color.normalizeHue(values[0]);
+                        var saturation = sk.Color.clampValue(values[1]);
+                        var lightness = sk.Color.clampValue(values[2]);
+                        hsl = new sk.Color.HSL(hue, saturation, lightness);
+                        scope.value = sk.Color.stringify(hsl.toColor());
+                        draw();
+                    }
                 });
                 scope.$watchGroup('size() innerSize()'.split(' '), function (values) {
                     var size = values[0];

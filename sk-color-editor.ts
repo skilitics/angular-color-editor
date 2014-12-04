@@ -78,12 +78,14 @@ module sk {
           }
         });
         scope.$watchGroup('hue saturation lightness'.split(' '), values => {
-          var hue = Color.normalizeHue(values[0]);
-          var saturation = Color.clampValue(values[1]);
-          var lightness = Color.clampValue(values[2]);
-          hsl = new Color.HSL(hue, saturation, lightness);
-          scope.value = Color.stringify(hsl.toColor());
-          draw();
+          if (!values.some(isNaN)) {
+            var hue = Color.normalizeHue(values[0]);
+            var saturation = Color.clampValue(values[1]);
+            var lightness = Color.clampValue(values[2]);
+            hsl = new Color.HSL(hue, saturation, lightness);
+            scope.value = Color.stringify(hsl.toColor());
+            draw();
+          }
         });
 
         scope.$watchGroup('size() innerSize()'.split(' '), values => {
